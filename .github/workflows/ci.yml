@@ -1,0 +1,41 @@
+
+name: CloudCart CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: python -m pip install pytest requests
+
+      - name: Build and start microservices
+        run: docker compose up --build -d
+
+      - name: Wait for services to start
+        run: sleep 5
+
+      - name: Run automated tests
+        run: python -m pytest tests -v
+
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop microservices
+        if: always()
+        run: docker compose down
